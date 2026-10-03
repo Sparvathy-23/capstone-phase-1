@@ -1,0 +1,6 @@
+{
+  "name": "secure-keystore",
+  "version": "1.0.0",
+  "description": "Android Keystore key generation and hash signing for the Secure Capture prototype",
+  "main": "index.ts"
+}

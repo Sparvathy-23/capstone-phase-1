@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Content Authenticity Network — Verify a Photo</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --good: #16a34a;
+    --bad: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(180deg, var(--bg), #1e293b);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    max-width: 520px;
+    width: 100%;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+    color: var(--text);
+  }
+  p.subtitle {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 14px;
+  }
+  .dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone.dragover {
+    border-color: var(--accent);
+    background: #eff6ff;
+  }
+  .dropzone p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  #fileInput { display: none; }
+  #preview {
+    max-width: 100%;
+    max-height: 220px;
+    border-radius: 10px;
+    margin-top: 16px;
+    display: none;
+  }
+  button#verifyBtn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button#verifyBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .result {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 10px;
+    display: none;
+  }
+  .result.verified {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  .result.not-verified {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+  }
+  .result h2 {
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+  .result.verified h2 { color: var(--good); }
+  .result.not-verified h2 { color: var(--bad); }
+  .result p {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .result .meta {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: monospace;
+    word-break: break-all;
+  }
+  .config {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .config input {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    width: 220px;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Verify a Photo</h1>
+    <p class="subtitle">
+      Upload the exact original photo file — this checks it against
+      the Content Authenticity Network's signed capture records.
+    </p>
+
+    <div class="dropzone" id="dropzone">
+      <div>📷</div>
+      <p>Click to choose a photo, or drag one here</p>
+      <img id="preview" alt="preview" />
+    </div>
+    <input type="file" id="fileInput" accept="image/*" />
+
+    <button id="verifyBtn" disabled>Check Authenticity</button>
+
+    <div class="result" id="result">
+      <h2 id="resultTitle"></h2>
+      <p id="resultReason"></p>
+      <div class="meta" id="resultMeta"></div>
+    </div>
+
+    <div class="config">
+      Backend: <input id="backendUrl" value="http://localhost:8000" />
+    </div>
+  </div>
+
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('preview');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const resultBox = document.getElementById('result');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultReason = document.getElementById('resultReason');
+  const resultMeta = document.getElementById('resultMeta');
+  const backendUrlInput = document.getElementById('backendUrl');
+
+  let selectedFile = null;
+
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    selectedFile = file;
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+    verifyBtn.disabled = false;
+    resultBox.style.display = 'none';
+  }
+
+  verifyBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'Checking...';
+    resultBox.style.display = 'none';
+
+    try {
+      const form = new FormData();
+      form.append('photo', selectedFile);
+
+      const backendUrl = backendUrlInput.value.replace(/\/$/, '');
+      const response = await fetch(`${backendUrl}/verify`, {
+        method: 'POST',
+        body: form,
+      });
+
+      const data = await response.json();
+      renderResult(data);
+    } catch (err) {
+      renderError(err);
+    } finally {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'Check Authenticity';
+    }
+  });
+
+  function renderResult(data) {
+    resultBox.style.display = 'block';
+    resultBox.className = 'result ' + (data.verified ? 'verified' : 'not-verified');
+    resultTitle.textContent = data.verified
+      ? '✅ Verified Authentic'
+      : '⚠️ Not Verified';
+    resultReason.textContent = data.reason;
+
+    let metaLines = [`Computed hash: ${data.computed_hash}`];
+    if (data.matched_capture) {
+      metaLines.push(`Device: ${data.matched_capture.device_id}`);
+      metaLines.push(`Captured at: ${data.matched_capture.capture_timestamp}`);
+    }
+    if (data.on_chain !== null && data.on_chain !== undefined) {
+      metaLines.push(`On-chain: ${data.on_chain ? 'yes' : 'no'}`);
+    }
+    if (data.blockchain_tx_hash) {
+      metaLines.push(`Tx: ${data.blockchain_tx_hash}`);
+    }
+    resultMeta.innerHTML = metaLines.join('<br/>');
+  }
+
+  function renderError(err) {
+    resultBox.style.display = 'block';
+    resultBox.className = 'result not-verified';
+    resultTitle.textContent = '⚠️ Could not reach backend';
+    resultReason.textContent = String(err.message || err);
+    resultMeta.textContent = '';
+  }
+</script>
+</body>
+</html>

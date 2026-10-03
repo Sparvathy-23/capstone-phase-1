@@ -1,0 +1,31 @@
+# Secrets — never commit these
+.env
+backend/.env
+blockchain/.env
+
+# Dependencies
+node_modules/
+**/node_modules/
+backend/venv/
+
+# Mobile build artifacts
+**/android/build/
+**/android/app/build/
+**/android/.cxx/
+**/android/local.properties
+**/.gradle/
+mobile-app/.expo/
+
+# Backend runtime data
+backend/*.db
+backend/storage_data/*
+!backend/storage_data/.gitkeep
+
+# Blockchain build artifacts
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain-types/
+
+# OS/editor clutter
+.DS_Store
+*.log

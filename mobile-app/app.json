@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Secure Capture Prototype",
+    "slug": "secure-capture-prototype",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs camera access to capture and securely sign photos."
+      }
+    },
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.securecaptureprototype"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to capture secure photos."
+        }
+      ]
+    ]
+  }
+}
